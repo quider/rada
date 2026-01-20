@@ -1,0 +1,23 @@
+spring:
+    application:
+        name: rada
+    liquibase:
+        change-log: classpath:db/changelog/db.changelog-master.xml
+    datasource:
+        url: jdbc:postgresql://localhost:5432/rada
+        username: rada_user
+        password: secret
+        driver-class-name: org.postgresql.Driver
+    jpa:
+        hibernate:
+            ddl-auto: update
+        show-sql: true
+        properties:
+            hibernate:
+                format_sql: true
+server:
+    port: 8080
+logging:
+    level:
+        org.springframework: INFO
+        pl.factorymethod.rada: DEBUG    
