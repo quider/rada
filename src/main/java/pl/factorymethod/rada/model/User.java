@@ -28,8 +28,11 @@ import lombok.Setter;
 public class User {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.UUID)
-  private UUID id;
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  @Column(name = "public_id", unique = true)
+  private UUID publicId;
 
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "student_id", nullable = false)

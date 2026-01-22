@@ -25,8 +25,11 @@ import lombok.Setter;
 public class Contribution {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.UUID)
-  private UUID id;
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  @Column(name = "public_id", unique = true)
+  private UUID publicId;
 
   @Column(nullable = false)
   private BigDecimal value;

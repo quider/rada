@@ -1,9 +1,9 @@
 package pl.factorymethod.rada.web;
 
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -24,6 +24,9 @@ import pl.factorymethod.rada.service.AnnouncementService;
 @RequiredArgsConstructor
 public class AnnouncementsController {
 
+    private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final int MAX_PAGE_SIZE = 100;
+
     private final AnnouncementService announcementService;
     private final AnnouncementMapper announcementMapper;
 
@@ -33,25 +36,32 @@ public class AnnouncementsController {
      */
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<AnnouncementDto>> getAnnouncementsByUserId(
-            @PathVariable UUID userId,
-            @RequestParam(required = false) Boolean unread) {
+            @PathVariable Long userId,
+            @RequestParam(required = false) Boolean unread,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "2") int size) {
         
-        log.info("Fetching announcements for user: {}, unread filter: {}", userId, unread);
+        int resolvedPage = Math.max(page, 0);
+        int resolvedSize = size <= 0 ? DEFAULT_PAGE_SIZE : Math.min(size, MAX_PAGE_SIZE);
+        PageRequest pageable = PageRequest.of(resolvedPage, resolvedSize);
+
+        log.info("Fetching announcements for user: {}, unread filter: {}, page: {}, size: {}",
+            userId, unread, resolvedPage, resolvedSize);
         
         List<AnnouncementDto> announcements;
         
         if (unread != null && unread) {
-            announcements = announcementService.getUnreadAnnouncementsByUserId(userId)
+            announcements = announcementService.getUnreadAnnouncementsByUserId(userId, pageable)
                 .stream()
                 .map(announcementMapper::toDto)
                 .collect(Collectors.toList());
         } else if (unread != null && !unread) {
-            announcements = announcementService.getReadAnnouncementsByUserId(userId)
+            announcements = announcementService.getReadAnnouncementsByUserId(userId, pageable)
                 .stream()
                 .map(announcementMapper::toDto)
                 .collect(Collectors.toList());
         } else {
-            announcements = announcementService.getAnnouncementsByUserId(userId)
+            announcements = announcementService.getAnnouncementsByUserId(userId, pageable)
                 .stream()
                 .map(announcementMapper::toDto)
                 .collect(Collectors.toList());
@@ -65,7 +75,7 @@ public class AnnouncementsController {
      * GET /api/v1/announcements/{id}
      */
     @GetMapping("/{id}")
-    public ResponseEntity<AnnouncementDto> getAnnouncementById(@PathVariable UUID id) {
+    public ResponseEntity<AnnouncementDto> getAnnouncementById(@PathVariable Long id) {
         log.info("Fetching announcement by id: {}", id);
         AnnouncementDto announcement = announcementMapper.toDto(
             announcementService.getAnnouncementById(id)
@@ -78,7 +88,7 @@ public class AnnouncementsController {
      * PATCH /api/v1/announcements/{id}/read
      */
     @PatchMapping("/{id}/read")
-    public ResponseEntity<AnnouncementDto> markAnnouncementAsRead(@PathVariable UUID id) {
+    public ResponseEntity<AnnouncementDto> markAnnouncementAsRead(@PathVariable Long id) {
         log.info("Marking announcement {} as read", id);
         AnnouncementDto announcement = announcementMapper.toDto(
             announcementService.markAsRead(id)

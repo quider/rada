@@ -20,8 +20,11 @@ import lombok.Setter;
 public class School {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.UUID)
-  private UUID id;
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  @Column(name = "public_id", unique = true)
+  private UUID publicId;
 
   @Column(nullable = false, unique = true)
   private String name;
