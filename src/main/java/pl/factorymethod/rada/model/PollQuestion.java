@@ -21,14 +21,17 @@ import lombok.Setter;
 public class PollQuestion {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.UUID)
-  private UUID id;
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
+
+  @Column(name = "public_id", unique = true)
+  private UUID publicId;
 
   @Column(nullable = false, columnDefinition = "text")
   private String question;
 
   @Column(name = "poll_id", nullable = false)
-  private UUID pollId;
+  private Long pollId;
 
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;
