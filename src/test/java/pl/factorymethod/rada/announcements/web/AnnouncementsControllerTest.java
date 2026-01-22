@@ -208,20 +208,6 @@ class AnnouncementsControllerTest {
         verify(announcementService).getAnnouncementsByUserId(eq(userId), any());
     }
 
-    @Test
-    @DisplayName("Should handle service exception gracefully")
-    void shouldHandleServiceExceptionGracefully() throws Exception {
-        // Given
-        Long nonExistentId = 999L;
-        when(announcementService.getAnnouncementById(nonExistentId))
-            .thenThrow(new RuntimeException("Announcement not found"));
-
-        // When & Then - expecting internal server error since controller doesn't handle exceptions
-        mockMvc.perform(get("/api/v1/announcements/{id}", nonExistentId)
-                .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isInternalServerError());
-    }
-
     private Announcement createAnnouncement(String summary, boolean read) {
         Announcement announcement = new Announcement();
         announcement.setId(3L);

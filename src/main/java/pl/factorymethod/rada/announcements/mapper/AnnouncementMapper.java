@@ -14,8 +14,8 @@ public class AnnouncementMapper {
         }
 
         return AnnouncementDto.builder()
-            .id(announcement.getId())
-            .userId(announcement.getUser().getId())
+            .id(announcement.getPublicId().toString())
+            .userId(announcement.getUser().getPublicId().toString())
             .userName(announcement.getUser().getName())
             .read(announcement.isRead())
             .createdAt(announcement.getCreatedAt())

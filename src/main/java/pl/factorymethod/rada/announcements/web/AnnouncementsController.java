@@ -1,5 +1,7 @@
 package pl.factorymethod.rada.announcements.web;
 
+import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
@@ -11,16 +13,17 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import pl.factorymethod.rada.announcements.dto.AnnouncementDto;
-import pl.factorymethod.rada.announcements.dto.AnnouncementsSliceDto;
 import pl.factorymethod.rada.announcements.mapper.AnnouncementMapper;
 import pl.factorymethod.rada.announcements.service.AnnouncementService;
 import pl.factorymethod.rada.model.Announcement;
 
 @Slf4j
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/api/v1/announcements")
 @RequiredArgsConstructor
@@ -37,8 +40,8 @@ public class AnnouncementsController {
      * GET /api/v1/announcements/user/{userId}
      */
     @GetMapping("/user/{userId}")
-    public ResponseEntity<AnnouncementsSliceDto> getAnnouncementsByUserId(
-            @PathVariable Long userId,
+    public ResponseEntity<List<AnnouncementDto>> getAnnouncementsByUserId(
+            @PathVariable String userId,
             @RequestParam(required = false) Boolean unread,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "2") int size) {
@@ -50,32 +53,23 @@ public class AnnouncementsController {
         log.info("Fetching announcements for user: {}, unread filter: {}, page: {}, size: {}",
             userId, unread, resolvedPage, resolvedSize);
         
-        AnnouncementsSliceDto response;
+        List<AnnouncementDto> response;
 
         if (unread != null && unread) {
             Slice<Announcement> announcements = announcementService.getUnreadAnnouncementsByUserId(userId, pageable);
-            response = AnnouncementsSliceDto.builder()
-                .announcements(announcements.getContent().stream()
-                    .map(announcementMapper::toDto)
-                    .collect(Collectors.toList()))
-                .hasNext(announcements.hasNext())
-                .build();
+            response = announcements.getContent().stream()
+                .map(announcementMapper::toDto)
+                .collect(Collectors.toList());
         } else if (unread != null && !unread) {
             Slice<Announcement> announcements = announcementService.getReadAnnouncementsByUserId(userId, pageable);
-            response = AnnouncementsSliceDto.builder()
-                .announcements(announcements.getContent().stream()
-                    .map(announcementMapper::toDto)
-                    .collect(Collectors.toList()))
-                .hasNext(announcements.hasNext())
-                .build();
+            response = announcements.getContent().stream()
+                .map(announcementMapper::toDto)
+                .collect(Collectors.toList());
         } else {
             Slice<Announcement> announcements = announcementService.getAnnouncementsByUserId(userId, pageable);
-            response = AnnouncementsSliceDto.builder()
-                .announcements(announcements.getContent().stream()
-                    .map(announcementMapper::toDto)
-                    .collect(Collectors.toList()))
-                .hasNext(announcements.hasNext())
-                .build();
+            response = announcements.getContent().stream()
+                .map(announcementMapper::toDto)
+                .collect(Collectors.toList());
         }
 
         return ResponseEntity.ok(response);
@@ -99,7 +93,7 @@ public class AnnouncementsController {
      * PATCH /api/v1/announcements/{id}/read
      */
     @PatchMapping("/{id}/read")
-    public ResponseEntity<AnnouncementDto> markAnnouncementAsRead(@PathVariable Long id) {
+    public ResponseEntity<AnnouncementDto> markAnnouncementAsRead(@PathVariable String id) {
         log.info("Marking announcement {} as read", id);
         AnnouncementDto announcement = announcementMapper.toDto(
             announcementService.markAsRead(id)
