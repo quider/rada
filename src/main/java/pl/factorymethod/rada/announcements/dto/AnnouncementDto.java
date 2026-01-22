@@ -1,4 +1,4 @@
-package pl.factorymethod.rada.dto;
+package pl.factorymethod.rada.announcements.dto;
 
 import java.time.LocalDateTime;
 

@@ -1,15 +1,14 @@
-package pl.factorymethod.rada.service;
-
-import java.util.List;
+package pl.factorymethod.rada.announcements.service;
 
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import pl.factorymethod.rada.announcements.repository.AnnouncementRepository;
 import pl.factorymethod.rada.model.Announcement;
-import pl.factorymethod.rada.repository.AnnouncementRepository;
 
 @Slf4j
 @Service
@@ -22,27 +21,27 @@ public class AnnouncementService {
      * Get all announcements for a specific user
      */
     @Transactional(readOnly = true)
-    public List<Announcement> getAnnouncementsByUserId(Long userId, Pageable pageable) {
+    public Slice<Announcement> getAnnouncementsByUserId(Long userId, Pageable pageable) {
         log.debug("Fetching all announcements for user: {}", userId);
-        return announcementRepository.findByUserId(userId, pageable).getContent();
+        return announcementRepository.findByUserId(userId, pageable);
     }
 
     /**
      * Get unread announcements for a specific user
      */
     @Transactional(readOnly = true)
-    public List<Announcement> getUnreadAnnouncementsByUserId(Long userId, Pageable pageable) {
+    public Slice<Announcement> getUnreadAnnouncementsByUserId(Long userId, Pageable pageable) {
         log.debug("Fetching unread announcements for user: {}", userId);
-        return announcementRepository.findUnreadByUserId(userId, pageable).getContent();
+        return announcementRepository.findUnreadByUserId(userId, pageable);
     }
 
     /**
      * Get read announcements for a specific user
      */
     @Transactional(readOnly = true)
-    public List<Announcement> getReadAnnouncementsByUserId(Long userId, Pageable pageable) {
+    public Slice<Announcement> getReadAnnouncementsByUserId(Long userId, Pageable pageable) {
         log.debug("Fetching read announcements for user: {}", userId);
-        return announcementRepository.findReadByUserId(userId, pageable).getContent();
+        return announcementRepository.findReadByUserId(userId, pageable);
     }
 
     /**

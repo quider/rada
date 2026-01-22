@@ -1,4 +1,4 @@
-package pl.factorymethod.rada.repository;
+package pl.factorymethod.rada.announcements.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

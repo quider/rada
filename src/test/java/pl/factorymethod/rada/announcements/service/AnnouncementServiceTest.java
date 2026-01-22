@@ -1,4 +1,4 @@
-package pl.factorymethod.rada.service;
+package pl.factorymethod.rada.announcements.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -18,13 +18,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 
 import pl.factorymethod.rada.model.Announcement;
 import pl.factorymethod.rada.model.User;
-import pl.factorymethod.rada.repository.AnnouncementRepository;
+import pl.factorymethod.rada.announcements.repository.AnnouncementRepository;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AnnouncementService Tests")
@@ -70,14 +71,14 @@ class AnnouncementServiceTest {
         Pageable pageable = PageRequest.of(0, 20);
         
         when(announcementRepository.findByUserId(userId, pageable))
-            .thenReturn(new PageImpl<>(expectedAnnouncements));
+            .thenReturn(new SliceImpl<>(expectedAnnouncements, pageable, false));
 
         // When
-        List<Announcement> result = announcementService.getAnnouncementsByUserId(userId, pageable);
+        Slice<Announcement> result = announcementService.getAnnouncementsByUserId(userId, pageable);
 
         // Then
-        assertThat(result).hasSize(2);
-        assertThat(result).containsExactly(announcement1, announcement2);
+        assertThat(result.getContent()).hasSize(2);
+        assertThat(result.getContent()).containsExactly(announcement1, announcement2);
         verify(announcementRepository).findByUserId(userId, pageable);
     }
 
@@ -90,14 +91,14 @@ class AnnouncementServiceTest {
         Pageable pageable = PageRequest.of(0, 20);
         
         when(announcementRepository.findUnreadByUserId(userId, pageable))
-            .thenReturn(new PageImpl<>(expectedAnnouncements));
+            .thenReturn(new SliceImpl<>(expectedAnnouncements, pageable, false));
 
         // When
-        List<Announcement> result = announcementService.getUnreadAnnouncementsByUserId(userId, pageable);
+        Slice<Announcement> result = announcementService.getUnreadAnnouncementsByUserId(userId, pageable);
 
         // Then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).isRead()).isFalse();
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).isRead()).isFalse();
         verify(announcementRepository).findUnreadByUserId(userId, pageable);
     }
 
@@ -110,14 +111,14 @@ class AnnouncementServiceTest {
         Pageable pageable = PageRequest.of(0, 20);
         
         when(announcementRepository.findReadByUserId(userId, pageable))
-            .thenReturn(new PageImpl<>(expectedAnnouncements));
+            .thenReturn(new SliceImpl<>(expectedAnnouncements, pageable, false));
 
         // When
-        List<Announcement> result = announcementService.getReadAnnouncementsByUserId(userId, pageable);
+        Slice<Announcement> result = announcementService.getReadAnnouncementsByUserId(userId, pageable);
 
         // Then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).isRead()).isTrue();
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).isRead()).isTrue();
         verify(announcementRepository).findReadByUserId(userId, pageable);
     }
 
@@ -186,13 +187,13 @@ class AnnouncementServiceTest {
         // Given
         Pageable pageable = PageRequest.of(0, 20);
         when(announcementRepository.findByUserId(userId, pageable))
-            .thenReturn(new PageImpl<>(Arrays.asList()));
+            .thenReturn(new SliceImpl<>(Arrays.asList(), pageable, false));
 
         // When
-        List<Announcement> result = announcementService.getAnnouncementsByUserId(userId, pageable);
+        Slice<Announcement> result = announcementService.getAnnouncementsByUserId(userId, pageable);
 
         // Then
-        assertThat(result).isEmpty();
+        assertThat(result.getContent()).isEmpty();
         verify(announcementRepository).findByUserId(userId, pageable);
     }
 

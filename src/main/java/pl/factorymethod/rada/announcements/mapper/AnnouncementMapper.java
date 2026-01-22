@@ -1,8 +1,8 @@
-package pl.factorymethod.rada.mapper;
+package pl.factorymethod.rada.announcements.mapper;
 
 import org.springframework.stereotype.Component;
 
-import pl.factorymethod.rada.dto.AnnouncementDto;
+import pl.factorymethod.rada.announcements.dto.AnnouncementDto;
 import pl.factorymethod.rada.model.Announcement;
 
 @Component

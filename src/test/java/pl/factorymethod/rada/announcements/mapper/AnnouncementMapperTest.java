@@ -1,4 +1,4 @@
-package pl.factorymethod.rada.mapper;
+package pl.factorymethod.rada.announcements.mapper;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -8,7 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import pl.factorymethod.rada.dto.AnnouncementDto;
+import pl.factorymethod.rada.announcements.dto.AnnouncementDto;
 import pl.factorymethod.rada.model.Announcement;
 import pl.factorymethod.rada.model.User;
 

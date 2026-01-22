@@ -1,4 +1,4 @@
-package pl.factorymethod.rada.web;
+package pl.factorymethod.rada.announcements.web;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -17,20 +17,22 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import pl.factorymethod.rada.mapper.AnnouncementMapper;
+import pl.factorymethod.rada.announcements.dto.AnnouncementDto;
+import pl.factorymethod.rada.announcements.mapper.AnnouncementMapper;
+import pl.factorymethod.rada.announcements.service.AnnouncementService;
 import pl.factorymethod.rada.model.Announcement;
 import pl.factorymethod.rada.model.User;
-import pl.factorymethod.rada.service.AnnouncementService;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(properties = {
@@ -87,7 +89,7 @@ class AnnouncementsControllerTest {
         List<Announcement> announcements = Arrays.asList(announcement1, announcement2);
         
         when(announcementService.getAnnouncementsByUserId(eq(userId), any()))
-            .thenReturn(announcements);
+            .thenReturn(new SliceImpl<>(announcements, PageRequest.of(1, 5), false));
         when(announcementMapper.toDto(announcement1)).thenReturn(createDto(announcement1));
         when(announcementMapper.toDto(announcement2)).thenReturn(createDto(announcement2));
 
@@ -97,9 +99,10 @@ class AnnouncementsControllerTest {
                 .param("size", "5")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].summary").value("Summary 1"))
-                .andExpect(jsonPath("$[1].summary").value("Summary 2"));
+                .andExpect(jsonPath("$.announcements.length()").value(2))
+                .andExpect(jsonPath("$.announcements[0].summary").value("Summary 1"))
+                .andExpect(jsonPath("$.announcements[1].summary").value("Summary 2"))
+                .andExpect(jsonPath("$.hasNext").value(false));
 
         verify(announcementService).getAnnouncementsByUserId(userId, PageRequest.of(1, 5));
     }
@@ -112,7 +115,7 @@ class AnnouncementsControllerTest {
         List<Announcement> announcements = Arrays.asList(unreadAnnouncement);
         
         when(announcementService.getUnreadAnnouncementsByUserId(eq(userId), any()))
-            .thenReturn(announcements);
+            .thenReturn(new SliceImpl<>(announcements, PageRequest.of(0, 20), false));
         when(announcementMapper.toDto(unreadAnnouncement)).thenReturn(createDto(unreadAnnouncement));
 
         // When & Then
@@ -120,9 +123,10 @@ class AnnouncementsControllerTest {
                 .param("unread", "true")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].summary").value("Unread"))
-                .andExpect(jsonPath("$[0].read").value(false));
+                .andExpect(jsonPath("$.announcements.length()").value(1))
+                .andExpect(jsonPath("$.announcements[0].summary").value("Unread"))
+                .andExpect(jsonPath("$.announcements[0].read").value(false))
+                .andExpect(jsonPath("$.hasNext").value(false));
 
         verify(announcementService).getUnreadAnnouncementsByUserId(eq(userId), any());
     }
@@ -135,7 +139,7 @@ class AnnouncementsControllerTest {
         List<Announcement> announcements = Arrays.asList(readAnnouncement);
         
         when(announcementService.getReadAnnouncementsByUserId(eq(userId), any()))
-            .thenReturn(announcements);
+            .thenReturn(new SliceImpl<>(announcements, PageRequest.of(0, 20), false));
         when(announcementMapper.toDto(readAnnouncement)).thenReturn(createDto(readAnnouncement));
 
         // When & Then
@@ -143,9 +147,10 @@ class AnnouncementsControllerTest {
                 .param("unread", "false")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].summary").value("Read"))
-                .andExpect(jsonPath("$[0].read").value(true));
+                .andExpect(jsonPath("$.announcements.length()").value(1))
+                .andExpect(jsonPath("$.announcements[0].summary").value("Read"))
+                .andExpect(jsonPath("$.announcements[0].read").value(true))
+                .andExpect(jsonPath("$.hasNext").value(false));
 
         verify(announcementService).getReadAnnouncementsByUserId(eq(userId), any());
     }
@@ -191,13 +196,14 @@ class AnnouncementsControllerTest {
     void shouldReturnEmptyListWhenUserHasNoAnnouncements() throws Exception {
         // Given
         when(announcementService.getAnnouncementsByUserId(eq(userId), any()))
-            .thenReturn(Arrays.asList());
+            .thenReturn(new SliceImpl<>(Arrays.asList(), PageRequest.of(0, 20), false));
 
         // When & Then
         mockMvc.perform(get("/api/v1/announcements/user/{userId}", userId)
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(0));
+                .andExpect(jsonPath("$.announcements.length()").value(0))
+                .andExpect(jsonPath("$.hasNext").value(false));
 
         verify(announcementService).getAnnouncementsByUserId(eq(userId), any());
     }
@@ -228,8 +234,8 @@ class AnnouncementsControllerTest {
         return announcement;
     }
 
-    private pl.factorymethod.rada.dto.AnnouncementDto createDto(Announcement announcement) {
-        return pl.factorymethod.rada.dto.AnnouncementDto.builder()
+    private AnnouncementDto createDto(Announcement announcement) {
+        return AnnouncementDto.builder()
             .id(announcement.getId())
             .userId(announcement.getUser().getId())
             .userName(announcement.getUser().getName())

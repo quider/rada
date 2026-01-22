@@ -1,9 +1,9 @@
-package pl.factorymethod.rada.web;
+package pl.factorymethod.rada.announcements.web;
 
-import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -14,9 +14,11 @@ import org.springframework.web.bind.annotation.RestController;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import pl.factorymethod.rada.dto.AnnouncementDto;
-import pl.factorymethod.rada.mapper.AnnouncementMapper;
-import pl.factorymethod.rada.service.AnnouncementService;
+import pl.factorymethod.rada.announcements.dto.AnnouncementDto;
+import pl.factorymethod.rada.announcements.dto.AnnouncementsSliceDto;
+import pl.factorymethod.rada.announcements.mapper.AnnouncementMapper;
+import pl.factorymethod.rada.announcements.service.AnnouncementService;
+import pl.factorymethod.rada.model.Announcement;
 
 @Slf4j
 @RestController
@@ -35,7 +37,7 @@ public class AnnouncementsController {
      * GET /api/v1/announcements/user/{userId}
      */
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<AnnouncementDto>> getAnnouncementsByUserId(
+    public ResponseEntity<AnnouncementsSliceDto> getAnnouncementsByUserId(
             @PathVariable Long userId,
             @RequestParam(required = false) Boolean unread,
             @RequestParam(defaultValue = "0") int page,
@@ -48,26 +50,35 @@ public class AnnouncementsController {
         log.info("Fetching announcements for user: {}, unread filter: {}, page: {}, size: {}",
             userId, unread, resolvedPage, resolvedSize);
         
-        List<AnnouncementDto> announcements;
-        
+        AnnouncementsSliceDto response;
+
         if (unread != null && unread) {
-            announcements = announcementService.getUnreadAnnouncementsByUserId(userId, pageable)
-                .stream()
-                .map(announcementMapper::toDto)
-                .collect(Collectors.toList());
+            Slice<Announcement> announcements = announcementService.getUnreadAnnouncementsByUserId(userId, pageable);
+            response = AnnouncementsSliceDto.builder()
+                .announcements(announcements.getContent().stream()
+                    .map(announcementMapper::toDto)
+                    .collect(Collectors.toList()))
+                .hasNext(announcements.hasNext())
+                .build();
         } else if (unread != null && !unread) {
-            announcements = announcementService.getReadAnnouncementsByUserId(userId, pageable)
-                .stream()
-                .map(announcementMapper::toDto)
-                .collect(Collectors.toList());
+            Slice<Announcement> announcements = announcementService.getReadAnnouncementsByUserId(userId, pageable);
+            response = AnnouncementsSliceDto.builder()
+                .announcements(announcements.getContent().stream()
+                    .map(announcementMapper::toDto)
+                    .collect(Collectors.toList()))
+                .hasNext(announcements.hasNext())
+                .build();
         } else {
-            announcements = announcementService.getAnnouncementsByUserId(userId, pageable)
-                .stream()
-                .map(announcementMapper::toDto)
-                .collect(Collectors.toList());
+            Slice<Announcement> announcements = announcementService.getAnnouncementsByUserId(userId, pageable);
+            response = AnnouncementsSliceDto.builder()
+                .announcements(announcements.getContent().stream()
+                    .map(announcementMapper::toDto)
+                    .collect(Collectors.toList()))
+                .hasNext(announcements.hasNext())
+                .build();
         }
-        
-        return ResponseEntity.ok(announcements);
+
+        return ResponseEntity.ok(response);
     }
 
     /**
