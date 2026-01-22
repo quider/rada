@@ -13,8 +13,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class AnnouncementDto {
     
-    private Long id;
-    private Long userId;
+    private String id;
+    private String userId;
     private String userName;
     private boolean read;
     private LocalDateTime createdAt;
