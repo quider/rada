@@ -80,7 +80,7 @@ public class AnnouncementsController {
      * GET /api/v1/announcements/{id}
      */
     @GetMapping("/{id}")
-    public ResponseEntity<AnnouncementDto> getAnnouncementById(@PathVariable Long id) {
+    public ResponseEntity<AnnouncementDto> getAnnouncementById(@PathVariable String id) {
         log.info("Fetching announcement by id: {}", id);
         AnnouncementDto announcement = announcementMapper.toDto(
             announcementService.getAnnouncementById(id)

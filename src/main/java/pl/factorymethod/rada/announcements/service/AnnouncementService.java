@@ -62,9 +62,9 @@ public class AnnouncementService {
      * Get a single announcement by ID
      */
     @Transactional(readOnly = true)
-    public Announcement getAnnouncementById(Long id) {
+    public Announcement getAnnouncementById(String id) {
         log.debug("Fetching announcement by id: {}", id);
-        return announcementRepository.findById(id)
+        return announcementRepository.findByPublicId(UUID.fromString(id))
             .orElseThrow(() -> new RuntimeException("Announcement not found with id: " + id));
     }
 }
