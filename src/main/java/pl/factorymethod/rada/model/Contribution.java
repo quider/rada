@@ -34,6 +34,24 @@ public class Contribution {
   @Column(nullable = false)
   private BigDecimal value;
 
+  @Column(name = "platform_commission_reserved", nullable = false, precision = 38, scale = 2)
+  private BigDecimal platformCommissionReserved;
+
+  @Column(name = "operator_fee", precision = 38, scale = 2)
+  private BigDecimal operatorFee;
+
+  @Column(name = "operator_fee_status", nullable = false, length = 20)
+  private String operatorFeeStatus;
+
+  @Column(name = "operator_fee_settled_at")
+  private LocalDateTime operatorFeeSettledAt;
+
+  @Column(name = "net_to_target", precision = 38, scale = 2, insertable = false, updatable = false)
+  private BigDecimal netToTarget;
+
+  @Column(name = "platform_profit", precision = 38, scale = 2, insertable = false, updatable = false)
+  private BigDecimal platformProfit;
+
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "student_id", nullable = false)
   private Student student;
