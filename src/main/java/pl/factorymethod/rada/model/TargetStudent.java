@@ -1,5 +1,6 @@
 package pl.factorymethod.rada.model;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -36,4 +37,10 @@ public class TargetStudent {
 
   @Column(name = "created_at", nullable = false)
   private LocalDateTime createdAt;
+
+  @Column(name = "fee_amount", precision = 38, scale = 2)
+  private BigDecimal feeAmount;
+
+  @Column(name = "fee_calculated_at")
+  private LocalDateTime feeCalculatedAt;
 }
