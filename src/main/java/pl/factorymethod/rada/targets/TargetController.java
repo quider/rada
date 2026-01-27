@@ -2,6 +2,7 @@ package pl.factorymethod.rada.targets;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -40,6 +41,22 @@ public class TargetController {
     public ResponseEntity<Void> addStudentsToTarget(@Valid @RequestBody AddStudentsToTargetRequest request) {
         log.info("Adding {} students to target: {}", request.getStudentIds().size(), request.getTargetId());
         targetService.addStudentsToTarget(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @Operation(
+            summary = "Open contribution collection",
+            description = "Freeze student fees for a target and emit a domain event"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Contribution collection opened"),
+            @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Target not found", content = @Content)
+    })
+    @PostMapping("/{targetId}/contributions/open")
+    public ResponseEntity<Void> openContributionCollection(@PathVariable String targetId) {
+        log.info("Opening contribution collection for target: {}", targetId);
+        targetService.openContributionCollection(targetId);
         return ResponseEntity.ok().build();
     }
 }

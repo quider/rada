@@ -1,9 +1,12 @@
 package pl.factorymethod.rada.targets;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,6 +16,7 @@ import pl.factorymethod.rada.model.Student;
 import pl.factorymethod.rada.model.Target;
 import pl.factorymethod.rada.model.TargetStudent;
 import pl.factorymethod.rada.targets.dto.AddStudentsToTargetRequest;
+import pl.factorymethod.rada.targets.event.TargetContributionCollectionOpenedEvent;
 import pl.factorymethod.rada.targets.repository.StudentRepository;
 import pl.factorymethod.rada.targets.repository.TargetRepository;
 import pl.factorymethod.rada.targets.repository.TargetStudentRepository;
@@ -25,6 +29,7 @@ public class TargetService {
     private final TargetRepository targetRepository;
     private final StudentRepository studentRepository;
     private final TargetStudentRepository targetStudentRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     public void addStudentsToTarget(AddStudentsToTargetRequest request) {
@@ -64,5 +69,39 @@ public class TargetService {
         targetStudentRepository.saveAll(targetStudents);
         
         log.info("Successfully added {} students to target {}", students.size(), target.getPublicId());
+    }
+
+    @Transactional
+    public void openContributionCollection(String targetId) {
+        UUID targetPublicId = UUID.fromString(targetId);
+
+        Target target = targetRepository.findByPublicId(targetPublicId)
+                .orElseThrow(() -> new RuntimeException("Target not found: " + targetId));
+
+        List<TargetStudent> targetStudents = targetStudentRepository.findByTarget(target);
+
+        if (targetStudents.isEmpty()) {
+            throw new RuntimeException("No students assigned to target: " + targetId);
+        }
+
+        BigDecimal feePerStudent = target.getEstimatedValue()
+                .divide(BigDecimal.valueOf(targetStudents.size()), 2, RoundingMode.HALF_UP);
+        LocalDateTime now = LocalDateTime.now();
+
+        targetStudents.forEach(targetStudent -> {
+            targetStudent.setFeeAmount(feePerStudent);
+            targetStudent.setFeeCalculatedAt(now);
+        });
+
+        targetStudentRepository.saveAll(targetStudents);
+
+        eventPublisher.publishEvent(new TargetContributionCollectionOpenedEvent(
+                target.getPublicId(),
+                now,
+                feePerStudent,
+                targetStudents.size()));
+
+        log.info("Contribution collection opened for target {}. Fee per student: {}, students: {}",
+                target.getPublicId(), feePerStudent, targetStudents.size());
     }
 }
