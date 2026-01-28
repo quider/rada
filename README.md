@@ -9,7 +9,7 @@ A comprehensive web application designed to streamline the management of school 
 
 ## 🎯 Features
 
-- **User Management**: Complete user authentication and authorization system
+- **User Management**: Complete user authentication and authorization system with per-user data encryption keys (DEK)
 - **Announcements**: Publish and manage school announcements with read tracking
 - **Financial Contributions**: Track and manage parent contributions for school targets
 - **Polls & Voting**: Create and manage polls with question-answer system
@@ -17,6 +17,7 @@ A comprehensive web application designed to streamline the management of school 
 - **Notifications**: Real-time notification system for users
 - **School & Class Management**: Organize students by schools and classes
 - **Student Profiles**: Manage student information and associations
+- **Event-Driven Architecture**: Domain events with outbox pattern for reliable inter-domain communication
 
 ## 🛠️ Tech Stack
 
@@ -199,6 +200,8 @@ The application exposes RESTful endpoints for:
 - Polls
 - Notifications
 
+Key endpoints:
+- **Create user**: `POST /api/v1/users` creates a new user with cryptographically secure DEK (Data Encryption Key) generation for per-user data encryption
 - **Open contribution collection**: `POST /api/v1/targets/{targetId}/contributions/open` (requires header `X-Rada-Admin-Token`) freezes per-student fees and emits a domain event (`TargetContributionCollectionOpenedEvent`); a log listener and outbox entry are created for downstream domains.
 
 _(Full API documentation coming soon)_

@@ -28,7 +28,18 @@ springdoc:
 logging:
     level:
         org.springframework: INFO
-        pl.factorymethod.rada: DEBUG    
+        pl.factorymethod.rada: DEBUG
+
+management:
+    endpoints:
+        web:
+            exposure:
+                include: "*"
+    endpoint:
+        health:
+            show-details: always
 
 rada:
     admin-token: dev-admin-token
+    encryption:
+        dek-size-bytes: 32
