@@ -1,5 +1,7 @@
 package pl.factorymethod.rada.users;
 
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,6 +19,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import pl.factorymethod.rada.users.dto.CreateUserRequest;
+import pl.factorymethod.rada.users.dto.CreateClassUsersRequest;
 import pl.factorymethod.rada.users.dto.UserResponse;
 
 @Slf4j
@@ -46,8 +49,22 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    //todo: add posibility to create bunch of users at once for one class/course and assign them to proper students,
-    //  however remember that users table has a lot 
-    // of non null contraints so probably some additional mechanism is needed. Importatnt thing is to add new column 
-    // where you keep 8 digit access code for first login and password change, set name and surname and confirm mail/phone
+    @Operation(
+            summary = "Create users for class",
+            description = "Create multiple users for a specific class and assign them to students"
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Users created successfully",
+                    content = @Content(schema = @Schema(implementation = UserResponse.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Class or student not found", content = @Content),
+            @ApiResponse(responseCode = "409", description = "User already exists", content = @Content)
+    })
+    @PostMapping("/classes")
+    public ResponseEntity<List<UserResponse>> createUsersForClass(
+            @Valid @RequestBody CreateClassUsersRequest request) {
+        log.info("Create users for class request received: classId={}, count={}",
+                request.getClassId(), request.getUsers().size());
+        return ResponseEntity.ok(userService.createUsersForClass(request));
+    }
 }
