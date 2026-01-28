@@ -45,4 +45,9 @@ public class UserController {
         UserResponse response = userService.createUser(request);
         return ResponseEntity.ok(response);
     }
+
+    //todo: add posibility to create bunch of users at once for one class/course and assign them to proper students,
+    //  however remember that users table has a lot 
+    // of non null contraints so probably some additional mechanism is needed. Importatnt thing is to add new column 
+    // where you keep 8 digit access code for first login and password change, set name and surname and confirm mail/phone
 }

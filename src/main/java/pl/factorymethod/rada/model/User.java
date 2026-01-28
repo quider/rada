@@ -50,7 +50,7 @@ public class User {
   private String password;
 
   @Column(nullable = false)
-  private boolean enabled = true;
+  private boolean enabled = false;
 
   @Column(nullable = false)
   private boolean expired = false;
