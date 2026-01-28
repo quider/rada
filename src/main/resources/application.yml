@@ -29,3 +29,6 @@ logging:
     level:
         org.springframework: INFO
         pl.factorymethod.rada: DEBUG    
+
+rada:
+    admin-token: dev-admin-token

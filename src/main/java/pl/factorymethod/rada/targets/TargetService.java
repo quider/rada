@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import pl.factorymethod.rada.model.Student;
 import pl.factorymethod.rada.model.Target;
 import pl.factorymethod.rada.model.TargetStudent;
+import pl.factorymethod.rada.shared.events.DomainEventPublisher;
 import pl.factorymethod.rada.targets.dto.AddStudentsToTargetRequest;
 import pl.factorymethod.rada.targets.event.TargetContributionCollectionOpenedEvent;
 import pl.factorymethod.rada.targets.repository.StudentRepository;
@@ -26,10 +26,10 @@ import pl.factorymethod.rada.targets.repository.TargetStudentRepository;
 @RequiredArgsConstructor
 public class TargetService {
 
-    private final TargetRepository targetRepository;
-    private final StudentRepository studentRepository;
-    private final TargetStudentRepository targetStudentRepository;
-    private final ApplicationEventPublisher eventPublisher;
+        private final TargetRepository targetRepository;
+        private final StudentRepository studentRepository;
+        private final TargetStudentRepository targetStudentRepository;
+        private final DomainEventPublisher eventPublisher;
 
     @Transactional
     public void addStudentsToTarget(AddStudentsToTargetRequest request) {
@@ -95,7 +95,7 @@ public class TargetService {
 
         targetStudentRepository.saveAll(targetStudents);
 
-        eventPublisher.publishEvent(new TargetContributionCollectionOpenedEvent(
+        eventPublisher.publish(new TargetContributionCollectionOpenedEvent(
                 target.getPublicId(),
                 now,
                 feePerStudent,

@@ -1,10 +1,13 @@
 package pl.factorymethod.rada.targets;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -27,6 +30,9 @@ import pl.factorymethod.rada.targets.dto.AddStudentsToTargetRequest;
 public class TargetController {
 
     private final TargetService targetService;
+
+        @Value("${rada.admin-token:dev-admin-token}")
+        private String adminToken;
 
     @Operation(
             summary = "Add students to target",
@@ -54,9 +60,16 @@ public class TargetController {
             @ApiResponse(responseCode = "404", description = "Target not found", content = @Content)
     })
     @PostMapping("/{targetId}/contributions/open")
-    public ResponseEntity<Void> openContributionCollection(@PathVariable String targetId) {
-        log.info("Opening contribution collection for target: {}", targetId);
-        targetService.openContributionCollection(targetId);
-        return ResponseEntity.ok().build();
+        public ResponseEntity<Void> openContributionCollection(
+                        @PathVariable String targetId,
+                        @RequestHeader(value = "X-Rada-Admin-Token", required = false) String providedToken) {
+                if (providedToken == null || !providedToken.equals(adminToken)) {
+                        log.warn("Unauthorized attempt to open contribution collection for target {}", targetId);
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+                }
+
+                log.info("Opening contribution collection for target: {}", targetId);
+                targetService.openContributionCollection(targetId);
+                return ResponseEntity.ok().build();
     }
 }

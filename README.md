@@ -199,6 +199,8 @@ The application exposes RESTful endpoints for:
 - Polls
 - Notifications
 
+- **Open contribution collection**: `POST /api/v1/targets/{targetId}/contributions/open` (requires header `X-Rada-Admin-Token`) freezes per-student fees and emits a domain event (`TargetContributionCollectionOpenedEvent`); a log listener and outbox entry are created for downstream domains.
+
 _(Full API documentation coming soon)_
 
 ## 🤝 Contributing
