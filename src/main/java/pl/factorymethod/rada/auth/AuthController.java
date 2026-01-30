@@ -43,27 +43,11 @@ public class AuthController {
             @ApiResponse(responseCode = "401", description = "Unauthorized",
                     content = @Content)
     })
-    @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        log.info("Login request received for email: {}", request.getEmail());
-        LoginResponse response = authService.login(request);
-        return ResponseEntity.ok(response);
+    @PostMapping("/provision")
+    public ResponseEntity<Void> login() {
+        //todo: implement a logic which gets userId from jwt and retrive all data from keycloak about this user
+        //at the same time the same user is matched in rada database by id or its created if not existing.
+        //This user is needed to keep relations correctness in rada database
+        return ResponseEntity.ok().build();
     }
-
-    @Operation(
-            summary = "Check session",
-            description = "Check if user is currently logged in and get session information"
-    )
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Session is active",
-                    content = @Content(schema = @Schema(implementation = LoginResponse.class))),
-            @ApiResponse(responseCode = "401", description = "Not logged in",
-                    content = @Content)
-    })
-    @GetMapping("/logged-in")
-    public ResponseEntity<LoginResponse> getMethodName() {
-         LoginResponse response = authService.checkSession();
-        return ResponseEntity.ok(response);
-    }
-    
 }

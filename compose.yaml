@@ -7,3 +7,18 @@ services:
       - 'POSTGRES_USER=rada_user'
     ports:
       - '5432:5432'
+
+  keycloak:
+    image: 'quay.io/keycloak/keycloak:latest'
+    environment:
+      - 'KEYCLOAK_ADMIN=admin'
+      - 'KEYCLOAK_ADMIN_PASSWORD=admin'
+      - 'KC_DB=postgres'
+      - 'KC_DB_URL=jdbc:postgresql://postgres:5432/keycloak'
+      - 'KC_DB_USERNAME=rada_user'
+      - 'KC_DB_PASSWORD=secret'
+    ports:
+      - '8180:8080'
+    command: start-dev
+    depends_on:
+      - postgres
