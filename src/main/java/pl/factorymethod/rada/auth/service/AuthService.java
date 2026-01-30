@@ -1,12 +1,15 @@
 package pl.factorymethod.rada.auth.service;
 
-import java.util.UUID;
+import java.security.SecureRandom;
+import java.time.Instant;
+import java.util.Optional;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import pl.factorymethod.rada.auth.dto.LoginRequest;
 import pl.factorymethod.rada.auth.dto.LoginResponse;
 import pl.factorymethod.rada.auth.repository.UserRepository;
 import pl.factorymethod.rada.model.User;
@@ -18,60 +21,68 @@ public class AuthService {
 
     private final UserRepository userRepository;
 
-    public LoginResponse login(LoginRequest request) {
-        log.info("Login attempt for email: {}", request.getEmail());
+    public LoginResponse provisionUser(Authentication authentication) {
+        String userId = extractUserIdFromJwt(authentication);
+        String email = extractEmailFromJwt(authentication);
+        String name = extractNameFromJwt(authentication);
         
-        // User user = userRepository.findByEmail(request.getEmail())
-                // .orElseThrow(() -> new RuntimeException("Invalid email or password"));
-
-        User user = new User();
-        user.setEmail("a@a.a");
-        user.setPassword("password");
-        user.setEnabled(true);
-        user.setDeleted(false);
-        user.setExpired(false);
-        user.setId(1L);
-        user.setPublicId(UUID.fromString("7b6a52b7-445f-4917-91a1-43dd49d3e2d2"));
+        log.info("Provisioning user: userId={}, email={}, name={}", userId, email, name);
         
-        if (!user.isEnabled()) {
-            throw new RuntimeException("Account is disabled");
+        Optional<User> existingUser = userRepository.findByEmail(email);
+        
+        if (existingUser.isPresent()) {
+            log.info("User already exists in database: {}", email);
+            User user = existingUser.get();
+            return buildLoginResponse(user, userId);
         }
         
-        if (user.isDeleted()) {
-            throw new RuntimeException("Account is deleted");
-        }
+        createUser(userId, email, name);
         
-        if (user.isExpired()) {
-            throw new RuntimeException("Account is expired");
-        }
-        
-        // TODO: Add password encryption comparison (e.g., BCrypt)
-        // if (!user.getPassword().equals(request.getPassword())) {
-        //     throw new RuntimeException("Invalid email or password");
-        // }
-        
-        // TODO: Generate proper JWT token
-        String token = generateToken(user);
-        
-        log.info("User {} logged in successfully", user.getId());
-        return new LoginResponse(token, user.getPublicId());
-    }
-    
-    private String generateToken(User user) {
-        // Temporary token generation - replace with JWT
-        return UUID.randomUUID().toString();
+        return new LoginResponse(userId, email, name);
     }
 
-    public LoginResponse checkSession() {
+    private void createUser(String userId, String email, String name) {
         User user = new User();
-        user.setEmail("a@a.a");
-        user.setPassword("password");
+        user.setPublicId(java.util.UUID.fromString(userId));
+        user.setEmail(email);
+        user.setName(name);
         user.setEnabled(true);
-        user.setDeleted(false);
         user.setExpired(false);
-        user.setId(1L);
-        user.setPublicId(UUID.fromString("7b6a52b7-445f-4917-91a1-43dd49d3e2d2"));
-        // TODO Auto-generated method stub
-       return new LoginResponse(generateToken(user), user.getPublicId());
+        user.setDeleted(false); 
+        SecureRandom secureRandom = new SecureRandom(Instant.now().toString().getBytes());
+        byte[] dek = new byte[32];
+        secureRandom.nextBytes(dek);
+        user.setDek(dek);
+        userRepository.save(user);
+        log.info("Created new user: {}", email);
+    }
+
+    private String extractUserIdFromJwt(Authentication authentication) {
+        if (authentication.getPrincipal() instanceof Jwt jwt) {
+            return jwt.getSubject();
+        }
+        return authentication.getPrincipal().toString();
+    }
+
+    private String extractEmailFromJwt(Authentication authentication) {
+        if (authentication.getPrincipal() instanceof Jwt jwt) {
+            return jwt.getClaimAsString("email");
+        }
+        return null;
+    }
+
+    private String extractNameFromJwt(Authentication authentication) {
+        if (authentication.getPrincipal() instanceof Jwt jwt) {
+            return jwt.getClaimAsString("name");
+        }
+        return null;
+    }
+
+    private LoginResponse buildLoginResponse(User user, String userId) {
+        return new LoginResponse(
+                userId,
+                user.getEmail(),
+                user.getName()
+        );
     }
 }

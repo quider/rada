@@ -83,6 +83,11 @@ public class UserService {
                 user.isEnabled());
     }
 
+    private String createJoinCode() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'createJoinCode'");
+}
+
     @Transactional
     public List<UserResponse> createUsersForClass(CreateClassUsersRequest request) {
         UUID classPublicId = UUID.fromString(request.getClassId());
@@ -148,6 +153,7 @@ public class UserService {
             user.setEnabled(true);
             user.setExpired(false);
             user.setDeleted(false);
+            user.setJoinCode(createJoinCode());
             user.setDek(dek);
 
             usersToSave.add(user);

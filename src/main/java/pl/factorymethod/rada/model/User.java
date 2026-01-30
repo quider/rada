@@ -16,12 +16,10 @@ import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import lombok.Getter;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @Entity
 @Table(name = "users")
@@ -37,7 +35,8 @@ public class User {
   @ManyToOne(fetch = FetchType.LAZY, optional = false)
   @JoinColumn(name = "student_id", nullable = false)
   private Student student;
-
+  
+  @Column
   private String name;
 
   @Column(nullable = false, unique = true)
@@ -58,8 +57,11 @@ public class User {
   @Column(nullable = false)
   private boolean deleted = false;
 
-  @Lob
+  @Column(name = "dek", columnDefinition = "bytea")
   private byte[] dek;
+
+  @Column(name = "join_code", length = 64, unique = true)
+  private String joinCode;
 
   @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(

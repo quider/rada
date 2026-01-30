@@ -1,16 +1,21 @@
 package pl.factorymethod.rada.auth.dto;
 
-import java.util.UUID;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
 @AllArgsConstructor
 public class LoginResponse {
 
-    private String token;
-    private UUID userId;
+    @JsonProperty("user_id")
+    private String userId;
+    
+    private String email;
+    private String name;
 }
