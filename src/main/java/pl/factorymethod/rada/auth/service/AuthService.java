@@ -2,11 +2,22 @@ package pl.factorymethod.rada.auth.service;
 
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +31,12 @@ import pl.factorymethod.rada.model.User;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
+
+    //todo: move to properties
+    // @Value("${keycloak.userinfo-uri}")
+    private String userinfoUri = "http://192.168.0.212:8180/realms/springboot/protocol/openid-connect/userinfo";
 
     public LoginResponse provisionUser(Authentication authentication) {
         String userId = extractUserIdFromJwt(authentication);
@@ -28,21 +45,38 @@ public class AuthService {
         
         log.info("Provisioning user: userId={}, email={}, name={}", userId, email, name);
         
-        Optional<User> existingUser = userRepository.findByEmail(email);
-        
-        if (existingUser.isPresent()) {
-            log.info("User already exists in database: {}", email);
-            User user = existingUser.get();
-            return buildLoginResponse(user, userId);
-        }
+
         
         createUser(userId, email, name);
         
         return new LoginResponse(userId, email, name);
     }
 
+   
+
+    private String callUserinfo() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
+            String token = jwt.getTokenValue();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(token);
+            HttpEntity<Void> request = new HttpEntity<>(headers);
+            
+            try {
+                ResponseEntity<String> response = restTemplate.exchange(userinfoUri, HttpMethod.GET, request, String.class);
+                log.info("Userinfo response: {}", response.getBody());
+                
+                Map<String, Object> userInfo = objectMapper.readValue(response.getBody(), new TypeReference<Map<String, Object>>() {});
+                return (String) userInfo.get("join_code");
+            } catch (Exception e) {
+                log.error("Failed to fetch userinfo from {}", userinfoUri, e);
+            }
+        }
+        return null;
+    }
+
     private void createUser(String userId, String email, String name) {
-        User user = new User();
+        User user = userRepository.findByJoinCode(callUserinfo());
         user.setPublicId(java.util.UUID.fromString(userId));
         user.setEmail(email);
         user.setName(name);
@@ -72,10 +106,10 @@ public class AuthService {
     }
 
     private String extractNameFromJwt(Authentication authentication) {
-        if (authentication.getPrincipal() instanceof Jwt jwt) {
-            return jwt.getClaimAsString("name");
-        }
-        return null;
+            if (authentication.getPrincipal() instanceof Jwt jwt) {
+                return jwt.getClaimAsString("name");
+            }
+            return null;
     }
 
     private LoginResponse buildLoginResponse(User user, String userId) {
