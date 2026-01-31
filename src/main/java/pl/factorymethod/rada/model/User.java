@@ -60,9 +60,6 @@ public class User {
   @Column(name = "dek", columnDefinition = "bytea")
   private byte[] dek;
 
-  @Column(name = "join_code", length = 64, unique = true)
-  private String joinCode;
-
   @ManyToMany(fetch = FetchType.LAZY)
   @JoinTable(
       name = "user_roles",

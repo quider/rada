@@ -75,7 +75,7 @@ public class AuthService {
     }
 
     private void createUser(String userId, String email, String name) {
-        User user = userRepository.findByJoinCode(callUserinfo());
+        User user =  new User()
         user.setPublicId(java.util.UUID.fromString(userId));
         user.setEmail(email);
         user.setName(name);
@@ -87,6 +87,7 @@ public class AuthService {
         secureRandom.nextBytes(dek);
         user.setDek(dek);
         userRepository.save(user);
+        userRepository.saveJoinCode(user.getId(), callUserinfo());
         log.info("Created new user: {}", email);
     }
 

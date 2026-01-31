@@ -153,7 +153,6 @@ public class UserService {
             user.setEnabled(true);
             user.setExpired(false);
             user.setDeleted(false);
-            user.setJoinCode(createJoinCode());
             user.setDek(dek);
 
             usersToSave.add(user);
