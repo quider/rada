@@ -37,6 +37,8 @@ logging:
         org.springframework.security: DEBUG
         org.springframework.security.oauth2: DEBUG
         pl.factorymethod.rada: DEBUG
+keycloak:
+    userinfo-uri: http://192.168.0.212:8180/realms/springboot/protocol/openid-connect/userinfo
 
 management:
     endpoints:

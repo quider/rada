@@ -34,9 +34,8 @@ public class AuthService {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
-    //todo: move to properties
-    // @Value("${keycloak.userinfo-uri}")
-    private String userinfoUri = "http://192.168.0.212:8180/realms/springboot/protocol/openid-connect/userinfo";
+    @Value("${keycloak.userinfo-uri}")
+    private String userinfoUri;
 
     public LoginResponse provisionUser(Authentication authentication) {
         String userId = extractUserIdFromJwt(authentication);
