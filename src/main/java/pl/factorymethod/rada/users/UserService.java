@@ -15,10 +15,12 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import pl.factorymethod.rada.auth.repository.UserRepository;
+import pl.factorymethod.rada.auth.repository.StudentJoinCodeRepository;
 import pl.factorymethod.rada.model.Student;
+import pl.factorymethod.rada.model.StudentJoinCode;
 import pl.factorymethod.rada.model.User;
+import pl.factorymethod.rada.shared.joincode.JoinCodeService;
 import pl.factorymethod.rada.targets.repository.StudentRepository;
-import pl.factorymethod.rada.users.dto.CreateUserRequest;
 import pl.factorymethod.rada.users.dto.CreateClassUserRequest;
 import pl.factorymethod.rada.users.dto.CreateClassUsersRequest;
 import pl.factorymethod.rada.users.dto.UserResponse;
@@ -33,60 +35,10 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final StudentRepository studentRepository;
+    private final StudentJoinCodeRepository studentJoinCodeRepository;
     private final DekGenerator dekGenerator;
     private final EventPublisher eventPublisher;
-
-    @Transactional
-    public UserResponse createUser(CreateUserRequest request) {
-        // Check if user already exists
-        userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
-            throw new RuntimeException("User with email " + request.getEmail() + " already exists");
-        });
-
-        // Find student
-        UUID studentPublicId = UUID.fromString(request.getStudentId());
-        Student student = studentRepository.findByPublicId(studentPublicId)
-                .orElseThrow(() -> new RuntimeException("Student not found: " + request.getStudentId()));
-
-        // Generate DEK (Data Encryption Key) for this user
-        byte[] dek = dekGenerator.generateDek();
-        
-        // Create user
-        User user = new User();
-        user.setPublicId(UUID.randomUUID());
-        user.setStudent(student);
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-        user.setPhone(request.getPhone());
-        user.setPassword(request.getPassword()); // TODO: Hash password in future
-        user.setEnabled(true);
-        user.setExpired(false);
-        user.setDeleted(false);
-        user.setDek(dek);
-
-        user = userRepository.save(user);
-
-        log.info("User created: publicId={}, email={}, DEK generated (length={})",
-                user.getPublicId(), user.getEmail(), dek.length);
-
-        // Publish domain event
-        eventPublisher.publish(new UserCreatedEvent(
-                user.getPublicId(),
-                user.getEmail(),
-                LocalDateTime.now()));
-
-        return new UserResponse(
-                user.getPublicId().toString(),
-                user.getEmail(),
-                user.getName(),
-                user.getPhone(),
-                user.isEnabled());
-    }
-
-    private String createJoinCode() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'createJoinCode'");
-}
+    private final JoinCodeService joinCodeService;
 
     @Transactional
     public List<UserResponse> createUsersForClass(CreateClassUsersRequest request) {
@@ -139,13 +91,13 @@ public class UserService {
         }
 
         List<User> usersToSave = new ArrayList<>(users.size());
+        List<Student> studentsForUsers = new ArrayList<>(users.size());
         for (CreateClassUserRequest userRequest : users) {
             Student student = studentsByPublicId.get(UUID.fromString(userRequest.getStudentId()));
             byte[] dek = dekGenerator.generateDek();
 
             User user = new User();
             user.setPublicId(UUID.randomUUID());
-            user.setStudent(student);
             user.setName(userRequest.getName());
             user.setEmail(userRequest.getEmail());
             user.setPhone(userRequest.getPhone());
@@ -156,9 +108,15 @@ public class UserService {
             user.setDek(dek);
 
             usersToSave.add(user);
+            studentsForUsers.add(student);
         }
 
         List<User> savedUsers = userRepository.saveAll(usersToSave);
+        List<StudentJoinCode> joinCodes = new ArrayList<>(savedUsers.size());
+        for (int i = 0; i < savedUsers.size(); i++) {
+            joinCodes.add(createJoinCodeLink(studentsForUsers.get(i), savedUsers.get(i)));
+        }
+        studentJoinCodeRepository.saveAll(joinCodes);
         LocalDateTime now = LocalDateTime.now();
         for (User user : savedUsers) {
             eventPublisher.publish(new UserCreatedEvent(
@@ -177,5 +135,28 @@ public class UserService {
                     user.isEnabled()));
         }
         return responses;
+    }
+
+    @Transactional
+    public void joinToClass(String userPublicId, String joinCode) {
+        UUID userId = UUID.fromString(userPublicId);
+        User user = userRepository.findByPublicId(userId)
+                .orElseThrow(() -> new RuntimeException("User not found: " + userPublicId));
+
+        int updated = studentJoinCodeRepository.assignUserToJoinCode(user.getId(), joinCode);
+        if (updated == 0) {
+            if (studentJoinCodeRepository.findByJoinCode(joinCode).isEmpty()) {
+                throw new RuntimeException("Join code not found: " + joinCode);
+            }
+            throw new RuntimeException("Join code already used: " + joinCode);
+        }
+    }
+
+    private StudentJoinCode createJoinCodeLink(Student student, User user) {
+        StudentJoinCode joinCode = new StudentJoinCode();
+        joinCode.setStudent(student);
+        joinCode.setUser(user);
+        joinCode.setJoinCode(joinCodeService.generateUniqueCode());
+        return joinCode;
     }
 }

@@ -23,9 +23,6 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
                     SELECT a.*
                     FROM announcements a
                     JOIN users u ON u.id = a.user_id
-                    JOIN students s ON s.id = u.student_id
-                    JOIN classes c ON c.id = s.class_id
-                    JOIN schools sc ON sc.id = c.school_id
                     WHERE u.enabled = true
                       AND u.expired = false
                       AND u.deleted = false
@@ -43,9 +40,6 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
                     SELECT a.*
                     FROM announcements a
                     JOIN users u ON u.id = a.user_id
-                    JOIN students s ON s.id = u.student_id
-                    JOIN classes c ON c.id = s.class_id
-                    JOIN schools sc ON sc.id = c.school_id
                     WHERE u.enabled = true
                       AND u.expired = false
                       AND u.deleted = false
@@ -64,9 +58,6 @@ public interface AnnouncementRepository extends JpaRepository<Announcement, Long
                     SELECT a.*
                     FROM announcements a
                     JOIN users u ON u.id = a.user_id
-                    JOIN students s ON s.id = u.student_id
-                    JOIN classes c ON c.id = s.class_id
-                    JOIN schools sc ON sc.id = c.school_id
                     WHERE u.enabled = true
                       AND u.expired = false
                       AND u.deleted = false

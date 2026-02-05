@@ -35,10 +35,10 @@ public class Student {
   @Column(nullable = false, length = 64)
   private String number;
 
-  @Column(name = "first_name", nullable = false, length = 64)
+  @Column(name = "first_name", length = 64)
   private String firstName;
 
-  @Column(name = "last_name", nullable = false, length = 64)
+  @Column(name = "last_name", length = 64)
   private String lastName;
 
   @ManyToOne(fetch = FetchType.LAZY)
@@ -47,4 +47,7 @@ public class Student {
 
   @OneToMany(mappedBy = "student", fetch = FetchType.LAZY, orphanRemoval = true)
   private Set<TargetStudent> targetStudents = new HashSet<>();
+
+  @OneToMany(mappedBy = "student", fetch = FetchType.LAZY, orphanRemoval = true)
+  private Set<StudentJoinCode> studentJoinCodes = new HashSet<>();
 }

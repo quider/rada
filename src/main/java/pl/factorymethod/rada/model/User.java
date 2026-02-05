@@ -13,7 +13,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,10 +30,6 @@ public class User {
 
   @Column(name = "public_id", unique = true)
   private UUID publicId;
-
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "student_id", nullable = false)
-  private Student student;
   
   @Column
   private String name;
@@ -65,4 +61,7 @@ public class User {
       joinColumns = @JoinColumn(name = "user_id"),
       inverseJoinColumns = @JoinColumn(name = "role"))
   private Set<Role> roles = new HashSet<>();
+
+  @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+  private Set<StudentJoinCode> studentJoinCodes = new HashSet<>();
 }

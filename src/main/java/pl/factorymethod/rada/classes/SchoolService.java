@@ -80,17 +80,17 @@ public class SchoolService {
         school.setName(request.getName());
         school.setAddress(request.getAddress());
 
-        school = schoolRepository.save(school);
+        School savedSchool = schoolRepository.save(school);
 
         eventPublisher.publish(new SchoolUpdatedEvent(
-                school.getPublicId(),
-                school.getName(),
-                school.getAddress(),
+                savedSchool.getPublicId(),
+                savedSchool.getName(),
+                savedSchool.getAddress(),
                 LocalDateTime.now()));
 
-        log.info("School updated: publicId={}, name={}", school.getPublicId(), school.getName());
+        log.info("School updated: publicId={}, name={}", savedSchool.getPublicId(), savedSchool.getName());
 
-        return toResponse(school);
+        return toResponse(savedSchool);
     }
 
     @Transactional
