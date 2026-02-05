@@ -1,5 +1,6 @@
 package pl.factorymethod.rada.classes;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -11,8 +12,11 @@ import lombok.extern.slf4j.Slf4j;
 import pl.factorymethod.rada.classes.dto.CreateSchoolRequest;
 import pl.factorymethod.rada.classes.dto.SchoolResponse;
 import pl.factorymethod.rada.classes.dto.UpdateSchoolRequest;
+import pl.factorymethod.rada.classes.event.SchoolCreatedEvent;
+import pl.factorymethod.rada.classes.event.SchoolUpdatedEvent;
 import pl.factorymethod.rada.classes.repository.SchoolRepository;
 import pl.factorymethod.rada.model.School;
+import pl.factorymethod.rada.shared.events.EventPublisher;
 
 @Slf4j
 @Service
@@ -20,6 +24,7 @@ import pl.factorymethod.rada.model.School;
 public class SchoolService {
 
     private final SchoolRepository schoolRepository;
+    private final EventPublisher eventPublisher;
 
     @Transactional
     public SchoolResponse createSchool(CreateSchoolRequest request) {
@@ -33,6 +38,12 @@ public class SchoolService {
         school.setAddress(request.getAddress());
 
         school = schoolRepository.save(school);
+
+        eventPublisher.publish(new SchoolCreatedEvent(
+                school.getPublicId(),
+                school.getName(),
+                school.getAddress(),
+                LocalDateTime.now()));
 
         log.info("School created: publicId={}, name={}", school.getPublicId(), school.getName());
 
@@ -70,6 +81,12 @@ public class SchoolService {
         school.setAddress(request.getAddress());
 
         school = schoolRepository.save(school);
+
+        eventPublisher.publish(new SchoolUpdatedEvent(
+                school.getPublicId(),
+                school.getName(),
+                school.getAddress(),
+                LocalDateTime.now()));
 
         log.info("School updated: publicId={}, name={}", school.getPublicId(), school.getName());
 
