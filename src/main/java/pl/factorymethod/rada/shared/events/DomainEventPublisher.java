@@ -8,11 +8,12 @@ import pl.factorymethod.rada.outbox.OutboxService;
 
 @Component
 @RequiredArgsConstructor
-public class DomainEventPublisher {
+public class DomainEventPublisher implements EventPublisher {
 
     private final ApplicationEventPublisher eventPublisher;
     private final OutboxService outboxService;
 
+    @Override
     public void publish(Object event) {
         outboxService.record(event);
         eventPublisher.publishEvent(event);

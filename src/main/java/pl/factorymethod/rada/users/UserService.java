@@ -24,7 +24,7 @@ import pl.factorymethod.rada.users.dto.CreateClassUsersRequest;
 import pl.factorymethod.rada.users.dto.UserResponse;
 import pl.factorymethod.rada.users.encryption.DekGenerator;
 import pl.factorymethod.rada.users.event.UserCreatedEvent;
-import pl.factorymethod.rada.shared.events.DomainEventPublisher;
+import pl.factorymethod.rada.shared.events.EventPublisher;
 
 @Slf4j
 @Service
@@ -34,7 +34,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final StudentRepository studentRepository;
     private final DekGenerator dekGenerator;
-    private final DomainEventPublisher eventPublisher;
+    private final EventPublisher eventPublisher;
 
     @Transactional
     public UserResponse createUser(CreateUserRequest request) {

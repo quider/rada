@@ -1,7 +1,10 @@
 package pl.factorymethod.rada.classes;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -15,11 +18,15 @@ import pl.factorymethod.rada.classes.dto.CreateStudentRequest;
 import pl.factorymethod.rada.classes.dto.MoveStudentRequest;
 import pl.factorymethod.rada.classes.dto.SchoolClassResponse;
 import pl.factorymethod.rada.classes.dto.StudentNameResponse;
+import pl.factorymethod.rada.classes.event.SchoolClassCreatedEvent;
+import pl.factorymethod.rada.classes.event.StudentAddedToClassEvent;
+import pl.factorymethod.rada.classes.event.StudentMovedToClassEvent;
 import pl.factorymethod.rada.classes.repository.SchoolClassRepository;
 import pl.factorymethod.rada.classes.repository.SchoolRepository;
 import pl.factorymethod.rada.model.School;
 import pl.factorymethod.rada.model.SchoolClass;
 import pl.factorymethod.rada.model.Student;
+import pl.factorymethod.rada.shared.events.EventPublisher;
 import pl.factorymethod.rada.targets.repository.StudentRepository;
 
 @Slf4j
@@ -30,6 +37,7 @@ public class SchoolClassService {
     private final SchoolRepository schoolRepository;
     private final SchoolClassRepository schoolClassRepository;
     private final StudentRepository studentRepository;
+    private final EventPublisher eventPublisher;
 
     @Transactional
     public SchoolClassResponse createClass(CreateSchoolClassRequest request) {
@@ -45,6 +53,14 @@ public class SchoolClassService {
         schoolClass.setSchool(school);
 
         schoolClass = schoolClassRepository.save(schoolClass);
+
+        eventPublisher.publish(new SchoolClassCreatedEvent(
+                schoolClass.getPublicId(),
+                school.getPublicId(),
+                schoolClass.getName(),
+                schoolClass.getStartYear(),
+                schoolClass.getDescription(),
+                LocalDateTime.now()));
 
         log.info("School class created: publicId={}, schoolId={}, name={}",
                 schoolClass.getPublicId(), school.getPublicId(), schoolClass.getName());
@@ -81,9 +97,27 @@ public class SchoolClassService {
         }
 
         List<Student> savedStudents = studentRepository.saveAll(studentsToSave);
+        List<Student> allStudents = renumberClass(schoolClass);
 
-        log.info("Added {} students to class {} (from number {})",
-                savedStudents.size(), schoolClass.getPublicId(), startNumber);
+        Map<UUID, String> numbersByStudentId = new HashMap<>(allStudents.size());
+        for (Student student : allStudents) {
+            numbersByStudentId.put(student.getPublicId(), student.getNumber());
+        }
+
+        LocalDateTime now = LocalDateTime.now();
+        for (Student student : savedStudents) {
+            String number = numbersByStudentId.get(student.getPublicId());
+            eventPublisher.publish(new StudentAddedToClassEvent(
+                    student.getPublicId(),
+                    schoolClass.getPublicId(),
+                    number,
+                    student.getFirstName(),
+                    student.getLastName(),
+                    now));
+        }
+
+        log.info("Added {} students to class {}",
+                savedStudents.size(), schoolClass.getPublicId());
 
         List<StudentNameResponse> responses = new ArrayList<>(savedStudents.size());
         for (Student student : savedStudents) {
@@ -116,16 +150,37 @@ public class SchoolClassService {
             throw new RuntimeException("Student not in class: " + sourceClassId);
         }
 
+        String oldNumber = student.getNumber();
+
         student.setSchoolClass(targetClass);
         studentRepository.save(student);
 
         renumberClass(sourceClass);
-        renumberClass(targetClass);
+        List<Student> targetStudents = renumberClass(targetClass);
+
+        String newNumber = null;
+        for (Student targetStudent : targetStudents) {
+            if (targetStudent.getPublicId().equals(studentPublicId)) {
+                newNumber = targetStudent.getNumber();
+                break;
+            }
+        }
+        if (newNumber == null) {
+            throw new RuntimeException("Student not found in target class after move: " + studentId);
+        }
+
+        eventPublisher.publish(new StudentMovedToClassEvent(
+                studentPublicId,
+                sourceClass.getPublicId(),
+                targetClass.getPublicId(),
+                oldNumber,
+                newNumber,
+                LocalDateTime.now()));
 
         log.info("Moved student {} from class {} to class {}", studentPublicId, sourceClassPublicId, targetClassPublicId);
     }
 
-    private void renumberClass(SchoolClass schoolClass) {
+    private List<Student> renumberClass(SchoolClass schoolClass) {
         List<Student> students = studentRepository.findBySchoolClassOrderByLastNameAscFirstNameAsc(schoolClass);
         int number = 1;
         for (Student student : students) {
@@ -133,5 +188,6 @@ public class SchoolClassService {
             number++;
         }
         studentRepository.saveAll(students);
+        return students;
     }
 }

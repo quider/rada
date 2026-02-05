@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import pl.factorymethod.rada.model.Student;
 import pl.factorymethod.rada.model.Target;
 import pl.factorymethod.rada.model.TargetStudent;
-import pl.factorymethod.rada.shared.events.DomainEventPublisher;
+import pl.factorymethod.rada.shared.events.EventPublisher;
 import pl.factorymethod.rada.targets.dto.AddStudentsToTargetRequest;
 import pl.factorymethod.rada.targets.dto.CreateTargetRequest;
 import pl.factorymethod.rada.targets.dto.TargetResponse;
@@ -31,7 +31,7 @@ public class TargetService {
         private final TargetRepository targetRepository;
         private final StudentRepository studentRepository;
         private final TargetStudentRepository targetStudentRepository;
-        private final DomainEventPublisher eventPublisher;
+        private final EventPublisher eventPublisher;
 
             @Transactional
             public TargetResponse createTarget(CreateTargetRequest request) {
