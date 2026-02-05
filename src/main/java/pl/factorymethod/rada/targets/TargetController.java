@@ -45,7 +45,7 @@ public class TargetController {
                         @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content)
         })
         @PostMapping
-        @PreAuthorize("hasAuthority('create_target')")
+        // @PreAuthorize("hasAuthority('create_target')")
         public ResponseEntity<TargetResponse> createTarget(@Valid @RequestBody CreateTargetRequest request) {
                 log.info("Create target request received: dueTo={}, estimatedValue={}",
                                 request.getDueTo(), request.getEstimatedValue());

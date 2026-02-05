@@ -31,6 +31,9 @@ springdoc:
         enabled: true
         operations-sorter: alpha
         tags-sorter: alpha
+        oauth:
+            client-id: swagger
+            use-pkce-with-authorization-code-grant: true
 logging:
     level:
         org.springframework: INFO

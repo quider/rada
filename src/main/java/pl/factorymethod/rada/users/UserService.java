@@ -21,6 +21,7 @@ import pl.factorymethod.rada.model.StudentJoinCode;
 import pl.factorymethod.rada.model.User;
 import pl.factorymethod.rada.shared.joincode.JoinCodeService;
 import pl.factorymethod.rada.targets.repository.StudentRepository;
+import pl.factorymethod.rada.users.dto.CreateUserRequest;
 import pl.factorymethod.rada.users.dto.CreateClassUserRequest;
 import pl.factorymethod.rada.users.dto.CreateClassUsersRequest;
 import pl.factorymethod.rada.users.dto.UserResponse;
@@ -39,6 +40,54 @@ public class UserService {
     private final DekGenerator dekGenerator;
     private final EventPublisher eventPublisher;
     private final JoinCodeService joinCodeService;
+
+    @Transactional
+    UserResponse createUser(CreateUserRequest request) {
+        // Check if user already exists
+        userRepository.findByEmail(request.getEmail()).ifPresent(user -> {
+            throw new RuntimeException("User with email " + request.getEmail() + " already exists");
+        });
+
+        // Find student
+        UUID studentPublicId = UUID.fromString(request.getStudentId());
+        Student student = studentRepository.findByPublicId(studentPublicId)
+                .orElseThrow(() -> new RuntimeException("Student not found: " + request.getStudentId()));
+
+        // Generate DEK (Data Encryption Key) for this user
+        byte[] dek = dekGenerator.generateDek();
+        
+        // Create user
+        User user = new User();
+        user.setPublicId(UUID.randomUUID());
+        user.setName(request.getName());
+        user.setEmail(request.getEmail());
+        user.setPhone(request.getPhone());
+        user.setPassword(request.getPassword()); // TODO: Hash password in future
+        user.setEnabled(true);
+        user.setExpired(false);
+        user.setDeleted(false);
+        user.setDek(dek);
+
+        user = userRepository.save(user);
+
+        StudentJoinCode joinCode = createJoinCodeLink(student, user);
+        studentJoinCodeRepository.save(joinCode);
+        log.info("User created: publicId={}, email={}, joinCode={}, DEK generated (length={})",
+                user.getPublicId(), user.getEmail(), joinCode.getJoinCode(), dek.length);
+
+        // Publish domain event
+        eventPublisher.publish(new UserCreatedEvent(
+                user.getPublicId(),
+                user.getEmail(),
+                LocalDateTime.now()));
+
+        return new UserResponse(
+                user.getPublicId().toString(),
+                user.getEmail(),
+                user.getName(),
+                user.getPhone(),
+                user.isEnabled());
+    }
 
     @Transactional
     public List<UserResponse> createUsersForClass(CreateClassUsersRequest request) {
