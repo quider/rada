@@ -5,6 +5,7 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.ArrayList;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +19,8 @@ import pl.factorymethod.rada.shared.events.EventPublisher;
 import pl.factorymethod.rada.targets.dto.AddStudentsToTargetRequest;
 import pl.factorymethod.rada.targets.dto.CreateTargetRequest;
 import pl.factorymethod.rada.targets.dto.TargetResponse;
+import pl.factorymethod.rada.targets.dto.TargetSummaryResponse;
+import pl.factorymethod.rada.targets.dto.TargetStudentResponse;
 import pl.factorymethod.rada.targets.event.TargetContributionCollectionOpenedEvent;
 import pl.factorymethod.rada.targets.repository.StudentRepository;
 import pl.factorymethod.rada.targets.repository.TargetRepository;
@@ -130,5 +133,82 @@ public class TargetService {
 
         log.info("Contribution collection opened for target {}. Fee per student: {}, students: {}",
                 target.getPublicId(), feePerStudent, targetStudents.size());
+    }
+
+    @Transactional(readOnly = true)
+    public List<TargetSummaryResponse> getTargets() {
+        List<Target> targets = targetRepository.findAll();
+        List<TargetSummaryResponse> responses = new ArrayList<>(targets.size());
+        for (Target target : targets) {
+            responses.add(mapToSummary(target));
+        }
+        return responses;
+    }
+
+    @Transactional(readOnly = true)
+    public TargetSummaryResponse getTarget(String targetId) {
+        UUID targetPublicId = UUID.fromString(targetId);
+        Target target = targetRepository.findByPublicId(targetPublicId)
+                .orElseThrow(() -> new RuntimeException("Target not found: " + targetId));
+        return mapToSummary(target);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TargetStudentResponse> getTargetStudents(String targetId) {
+        UUID targetPublicId = UUID.fromString(targetId);
+        Target target = targetRepository.findByPublicId(targetPublicId)
+                .orElseThrow(() -> new RuntimeException("Target not found: " + targetId));
+
+        List<TargetStudent> targetStudents = targetStudentRepository.findByTarget(target);
+        List<TargetStudentResponse> responses = new ArrayList<>(targetStudents.size());
+        for (TargetStudent targetStudent : targetStudents) {
+            Student student = targetStudent.getStudent();
+            responses.add(TargetStudentResponse.builder()
+                    .studentId(student.getPublicId().toString())
+                    .number(student.getNumber())
+                    .firstName(student.getFirstName())
+                    .lastName(student.getLastName())
+                    .build());
+        }
+        return responses;
+    }
+
+    @Transactional(readOnly = true)
+    public List<TargetSummaryResponse> getTargetsByClass(String classId) {
+        UUID classPublicId = UUID.fromString(classId);
+        List<Target> targets = targetRepository.findByClassPublicId(classPublicId);
+        List<TargetSummaryResponse> responses = new ArrayList<>(targets.size());
+        for (Target target : targets) {
+            responses.add(mapToSummary(target));
+        }
+        return responses;
+    }
+
+    private TargetSummaryResponse mapToSummary(Target target) {
+        List<TargetStudent> targetStudents = targetStudentRepository.findByTarget(target);
+        int studentCount = targetStudents.size();
+        BigDecimal feePerStudent = null;
+        LocalDateTime feeCalculatedAt = null;
+
+        for (TargetStudent targetStudent : targetStudents) {
+            if (targetStudent.getFeeCalculatedAt() != null) {
+                if (feeCalculatedAt == null || targetStudent.getFeeCalculatedAt().isAfter(feeCalculatedAt)) {
+                    feeCalculatedAt = targetStudent.getFeeCalculatedAt();
+                    feePerStudent = targetStudent.getFeeAmount();
+                }
+            }
+        }
+
+        return TargetSummaryResponse.builder()
+                .publicId(target.getPublicId().toString())
+                .description(target.getDescription())
+                .summary(target.getSummary())
+                .dueTo(target.getDueTo())
+                .estimatedValue(target.getEstimatedValue())
+                .createdAt(target.getCreatedAt())
+                .studentCount(studentCount)
+                .feePerStudent(feePerStudent)
+                .feeCalculatedAt(feeCalculatedAt)
+                .build();
     }
 }
