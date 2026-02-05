@@ -2,6 +2,7 @@ package pl.factorymethod.rada.auth.repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -19,6 +20,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<User> findByEmailIn(List<String> emails);
 
     List<User> findByPhoneIn(List<String> phones);
+
+    boolean existsByPublicId(UUID publicId);
 
     @Query(nativeQuery = true, 
         value = """
