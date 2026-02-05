@@ -35,6 +35,12 @@ public class Student {
   @Column(nullable = false, length = 64)
   private String number;
 
+  @Column(name = "first_name", nullable = false, length = 64)
+  private String firstName;
+
+  @Column(name = "last_name", nullable = false, length = 64)
+  private String lastName;
+
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "class_id")
   private SchoolClass schoolClass;

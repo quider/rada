@@ -16,6 +16,8 @@ import pl.factorymethod.rada.model.Target;
 import pl.factorymethod.rada.model.TargetStudent;
 import pl.factorymethod.rada.shared.events.DomainEventPublisher;
 import pl.factorymethod.rada.targets.dto.AddStudentsToTargetRequest;
+import pl.factorymethod.rada.targets.dto.CreateTargetRequest;
+import pl.factorymethod.rada.targets.dto.TargetResponse;
 import pl.factorymethod.rada.targets.event.TargetContributionCollectionOpenedEvent;
 import pl.factorymethod.rada.targets.repository.StudentRepository;
 import pl.factorymethod.rada.targets.repository.TargetRepository;
@@ -30,6 +32,31 @@ public class TargetService {
         private final StudentRepository studentRepository;
         private final TargetStudentRepository targetStudentRepository;
         private final DomainEventPublisher eventPublisher;
+
+            @Transactional
+            public TargetResponse createTarget(CreateTargetRequest request) {
+                Target target = new Target();
+                target.setPublicId(UUID.randomUUID());
+                target.setDescription(request.getDescription());
+                target.setSummary(request.getSummary());
+                target.setDueTo(request.getDueTo());
+                target.setEstimatedValue(request.getEstimatedValue());
+                target.setCreatedAt(LocalDateTime.now());
+
+                Target savedTarget = targetRepository.save(target);
+
+                log.info("Target created: publicId={}, dueTo={}, estimatedValue={}",
+                        savedTarget.getPublicId(), savedTarget.getDueTo(), savedTarget.getEstimatedValue());
+
+                return TargetResponse.builder()
+                        .publicId(savedTarget.getPublicId().toString())
+                        .description(savedTarget.getDescription())
+                        .summary(savedTarget.getSummary())
+                        .dueTo(savedTarget.getDueTo())
+                        .estimatedValue(savedTarget.getEstimatedValue())
+                        .createdAt(savedTarget.getCreatedAt())
+                        .build();
+            }
 
     @Transactional
     public void addStudentsToTarget(AddStudentsToTargetRequest request) {
