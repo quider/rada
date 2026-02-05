@@ -12,4 +12,6 @@ import pl.factorymethod.rada.model.School;
 public interface SchoolRepository extends JpaRepository<School, Long> {
 
     Optional<School> findByPublicId(UUID publicId);
+
+    Optional<School> findByName(String name);
 }
