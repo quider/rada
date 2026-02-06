@@ -33,12 +33,9 @@ public class ContributionController {
 
     private final ContributionService contributionService;
 
-    @Operation(
-            summary = "Create contribution",
-            description = "Create a new contribution payment for a target. " +
-                  "Fees must be frozen (calculated) before contributions can be collected. " +
-                  "Platform commission and operator fee are calculated based on provided rates."
-    )
+    @Operation(summary = "Create contribution", description = "Create a new contribution payment for a target. " +
+            "Fees must be frozen (calculated) before contributions can be collected. " +
+            "Platform commission and operator fee are calculated based on provided rates.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Contribution created successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid request or fees not frozen", content = @Content),
@@ -47,18 +44,14 @@ public class ContributionController {
     @PostMapping
     public ResponseEntity<Void> createContribution(@Valid @RequestBody CreateContributionRequest request) {
         log.info("Create contribution request received: targetId={}, studentId={}, value={}",
-            request.getTargetId(), request.getStudentId(), request.getValue());
+                request.getTargetId(), request.getStudentId(), request.getValue());
         contributionService.createContribution(request);
         return ResponseEntity.ok().build();
     }
 
-    @Operation(
-            summary = "Get contributions by target",
-            description = "List all contributions for a specific target"
-    )
+    @Operation(summary = "Get contributions by target", description = "List all contributions for a specific target")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Contributions retrieved successfully",
-                    content = @Content(schema = @Schema(implementation = ContributionResponse.class))),
+            @ApiResponse(responseCode = "200", description = "Contributions retrieved successfully", content = @Content(schema = @Schema(implementation = ContributionResponse.class))),
             @ApiResponse(responseCode = "404", description = "Target not found", content = @Content)
     })
     @GetMapping("/by-target/{targetId}")
@@ -67,13 +60,9 @@ public class ContributionController {
         return ResponseEntity.ok(contributionService.getContributionsByTarget(targetId));
     }
 
-    @Operation(
-            summary = "Get contributions by student",
-            description = "List all contributions for a specific student"
-    )
+    @Operation(summary = "Get contributions by student", description = "List all contributions for a specific student")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Contributions retrieved successfully",
-                    content = @Content(schema = @Schema(implementation = ContributionResponse.class))),
+            @ApiResponse(responseCode = "200", description = "Contributions retrieved successfully", content = @Content(schema = @Schema(implementation = ContributionResponse.class))),
             @ApiResponse(responseCode = "404", description = "Student not found", content = @Content)
     })
     @GetMapping("/by-student/{studentId}")
