@@ -3,6 +3,8 @@ package pl.factorymethod.rada.contributions;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -11,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import pl.factorymethod.rada.contributions.dto.CreateContributionRequest;
+import pl.factorymethod.rada.contributions.dto.ContributionResponse;
 import pl.factorymethod.rada.contributions.repository.ContributionRepository;
 import pl.factorymethod.rada.model.Contribution;
 import pl.factorymethod.rada.model.Student;
@@ -86,5 +89,47 @@ public class ContributionService {
 		request.getValue(), platformCommission, operatorFee,
 		request.getValue().subtract(platformCommission),
 		platformCommission.subtract(operatorFee));
+    }
+
+    @Transactional(readOnly = true)
+    public List<ContributionResponse> getContributionsByTarget(String targetId) {
+        UUID targetPublicId = UUID.fromString(targetId);
+        Target target = targetRepository.findByPublicId(targetPublicId)
+                .orElseThrow(() -> new RuntimeException("Target not found: " + targetId));
+        List<Contribution> contributions = contributionRepository.findByTargetOrderByCreatedAtDesc(target);
+        return mapToResponses(contributions);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ContributionResponse> getContributionsByStudent(String studentId) {
+        UUID studentPublicId = UUID.fromString(studentId);
+        Student student = studentRepository.findByPublicId(studentPublicId)
+                .orElseThrow(() -> new RuntimeException("Student not found: " + studentId));
+        List<Contribution> contributions = contributionRepository.findByStudentOrderByCreatedAtDesc(student);
+        return mapToResponses(contributions);
+    }
+
+    private List<ContributionResponse> mapToResponses(List<Contribution> contributions) {
+        List<ContributionResponse> responses = new ArrayList<>(contributions.size());
+        for (Contribution contribution : contributions) {
+            responses.add(mapToResponse(contribution));
+        }
+        return responses;
+    }
+
+    private ContributionResponse mapToResponse(Contribution contribution) {
+        return ContributionResponse.builder()
+                .publicId(contribution.getPublicId().toString())
+                .value(contribution.getValue())
+                .platformCommissionReserved(contribution.getPlatformCommissionReserved())
+                .operatorFee(contribution.getOperatorFee())
+                .operatorFeeStatus(contribution.getOperatorFeeStatus())
+                .operatorFeeSettledAt(contribution.getOperatorFeeSettledAt())
+                .netToTarget(contribution.getNetToTarget())
+                .platformProfit(contribution.getPlatformProfit())
+                .studentId(contribution.getStudent().getPublicId().toString())
+                .targetId(contribution.getTarget().getPublicId().toString())
+                .createdAt(contribution.getCreatedAt())
+                .build();
     }
 }
