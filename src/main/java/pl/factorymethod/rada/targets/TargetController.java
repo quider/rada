@@ -42,8 +42,7 @@ public class TargetController {
 
         @Operation(summary = "Create target", description = "Create a new target")
         @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Target created successfully",
-                                        content = @Content(schema = @Schema(implementation = TargetResponse.class))),
+                        @ApiResponse(responseCode = "200", description = "Target created successfully", content = @Content(schema = @Schema(implementation = TargetResponse.class))),
                         @ApiResponse(responseCode = "400", description = "Invalid request", content = @Content)
         })
         @PostMapping
@@ -76,13 +75,7 @@ public class TargetController {
         })
         @PostMapping("/{targetId}/contributions/open")
         public ResponseEntity<Void> openContributionCollection(
-                        @PathVariable String targetId,
-                        @RequestHeader(value = "X-Rada-Admin-Token", required = false) String providedToken) {
-                if (providedToken == null || !providedToken.equals(adminToken)) {
-                        log.warn("Unauthorized attempt to open contribution collection for target {}", targetId);
-                        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-                }
-
+                        @PathVariable String targetId) {
                 log.info("Opening contribution collection for target: {}", targetId);
                 targetService.openContributionCollection(targetId);
                 return ResponseEntity.ok().build();
@@ -90,8 +83,7 @@ public class TargetController {
 
         @Operation(summary = "Get targets", description = "List all targets")
         @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Targets retrieved successfully",
-                                        content = @Content(schema = @Schema(implementation = TargetSummaryResponse.class)))
+                        @ApiResponse(responseCode = "200", description = "Targets retrieved successfully", content = @Content(schema = @Schema(implementation = TargetSummaryResponse.class)))
         })
         @GetMapping
         public ResponseEntity<java.util.List<TargetSummaryResponse>> getTargets() {
@@ -100,8 +92,7 @@ public class TargetController {
 
         @Operation(summary = "Get target", description = "Get target details by public ID")
         @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Target retrieved successfully",
-                                        content = @Content(schema = @Schema(implementation = TargetSummaryResponse.class))),
+                        @ApiResponse(responseCode = "200", description = "Target retrieved successfully", content = @Content(schema = @Schema(implementation = TargetSummaryResponse.class))),
                         @ApiResponse(responseCode = "404", description = "Target not found", content = @Content)
         })
         @GetMapping("/{targetId}")
@@ -111,8 +102,7 @@ public class TargetController {
 
         @Operation(summary = "Get target students", description = "List students assigned to a target")
         @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Target students retrieved successfully",
-                                        content = @Content(schema = @Schema(implementation = TargetStudentResponse.class))),
+                        @ApiResponse(responseCode = "200", description = "Target students retrieved successfully", content = @Content(schema = @Schema(implementation = TargetStudentResponse.class))),
                         @ApiResponse(responseCode = "404", description = "Target not found", content = @Content)
         })
         @GetMapping("/{targetId}/students")
@@ -122,8 +112,7 @@ public class TargetController {
 
         @Operation(summary = "Get targets by class", description = "List targets for a specific class")
         @ApiResponses(value = {
-                        @ApiResponse(responseCode = "200", description = "Targets retrieved successfully",
-                                        content = @Content(schema = @Schema(implementation = TargetSummaryResponse.class))),
+                        @ApiResponse(responseCode = "200", description = "Targets retrieved successfully", content = @Content(schema = @Schema(implementation = TargetSummaryResponse.class))),
                         @ApiResponse(responseCode = "404", description = "Class not found", content = @Content)
         })
         @GetMapping("/by-class/{classId}")

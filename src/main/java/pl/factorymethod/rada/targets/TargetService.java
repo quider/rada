@@ -3,12 +3,18 @@ package pl.factorymethod.rada.targets;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.UUID;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +28,7 @@ import pl.factorymethod.rada.targets.dto.TargetResponse;
 import pl.factorymethod.rada.targets.dto.TargetSummaryResponse;
 import pl.factorymethod.rada.targets.dto.TargetStudentResponse;
 import pl.factorymethod.rada.targets.event.TargetContributionCollectionOpenedEvent;
+import pl.factorymethod.rada.targets.event.StudentsAddedToTargetEvent;
 import pl.factorymethod.rada.targets.repository.StudentRepository;
 import pl.factorymethod.rada.targets.repository.TargetRepository;
 import pl.factorymethod.rada.targets.repository.TargetStudentRepository;
@@ -67,25 +74,56 @@ public class TargetService {
         
         // Find target by public ID
         Target target = targetRepository.findByPublicId(targetPublicId)
-                .orElseThrow(() -> new RuntimeException("Target not found: " + request.getTargetId()));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Target not found: " + request.getTargetId()));
         
         // Convert student IDs to UUIDs
-        List<UUID> studentPublicIds = request.getStudentIds().stream()
+        List<UUID> requestedStudentIds = request.getStudentIds().stream()
                 .map(UUID::fromString)
+                .distinct()
                 .toList();
         
         // Find all students by public IDs
-        List<Student> students = studentRepository.findByPublicIdIn(studentPublicIds);
+        List<Student> students = studentRepository.findByPublicIdIn(requestedStudentIds);
         
-        if (students.size() != studentPublicIds.size()) {
+        if (students.size() != requestedStudentIds.size()) {
             log.warn("Not all students found. Requested: {}, Found: {}", 
-                    studentPublicIds.size(), students.size());
-            throw new RuntimeException("Some students not found");
+                    requestedStudentIds.size(), students.size());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Some students not found");
+        }
+
+        List<TargetStudent> existingTargetStudents = targetStudentRepository
+                .findByTargetAndStudent_PublicIdIn(target, requestedStudentIds);
+        Set<UUID> existingStudentIds = new HashSet<>(existingTargetStudents.size());
+        for (TargetStudent targetStudent : existingTargetStudents) {
+            existingStudentIds.add(targetStudent.getStudent().getPublicId());
+        }
+
+        List<UUID> newStudentIds = new ArrayList<>();
+        for (UUID studentId : requestedStudentIds) {
+            if (!existingStudentIds.contains(studentId)) {
+                newStudentIds.add(studentId);
+            }
+        }
+
+        if (newStudentIds.isEmpty()) {
+            log.info("No new students to add to target {}", target.getPublicId());
+            return;
+        }
+
+        Map<UUID, Student> studentsById = new HashMap<>(students.size());
+        for (Student student : students) {
+            studentsById.put(student.getPublicId(), student);
+        }
+
+        List<Student> newStudents = new ArrayList<>(newStudentIds.size());
+        for (UUID studentId : newStudentIds) {
+            newStudents.add(studentsById.get(studentId));
         }
         
         // Create TargetStudent entries
         LocalDateTime now = LocalDateTime.now();
-        List<TargetStudent> targetStudents = students.stream()
+        List<TargetStudent> targetStudents = newStudents.stream()
                 .map(student -> {
                     TargetStudent targetStudent = new TargetStudent();
                     targetStudent.setTarget(target);
@@ -97,8 +135,14 @@ public class TargetService {
         
         // Save all associations
         targetStudentRepository.saveAll(targetStudents);
+
+        eventPublisher.publish(new StudentsAddedToTargetEvent(
+                target.getPublicId(),
+                newStudentIds,
+                newStudentIds.size(),
+                now));
         
-        log.info("Successfully added {} students to target {}", students.size(), target.getPublicId());
+        log.info("Successfully added {} students to target {}", newStudentIds.size(), target.getPublicId());
     }
 
     @Transactional

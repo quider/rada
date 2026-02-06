@@ -34,9 +34,8 @@ public class OpenApiConfig {
         contact.setEmail("contact@rada.pl");
 
         License mitLicense = new License()
-                .name("MIT License")
-                .url("https://choosealicense.com/licenses/mit/");
-
+                .name("EULA ")
+                .url("");
         Info info = new Info()
                 .title("Rada API")
                 .version("1.0")
