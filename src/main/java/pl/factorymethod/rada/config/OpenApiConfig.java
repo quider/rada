@@ -20,49 +20,51 @@ import java.util.List;
 @Configuration
 public class OpenApiConfig {
 
-    @Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
-    private String issuerUri;
+	@Value("${spring.security.oauth2.resourceserver.jwt.issuer-uri}")
+	private String issuerUri;
 
-    @Bean
-    public OpenAPI radaOpenAPI() {
-        Server localServer = new Server();
-        localServer.setUrl("http://localhost:8080");
-        localServer.setDescription("Server URL in Local environment");
+	@Bean
+	public OpenAPI radaOpenAPI() {
+		Server localServer = new Server();
+		localServer.setUrl("http://localhost:8080");
+		localServer.setDescription("Server URL in Local environment");
 
-        Contact contact = new Contact();
-        contact.setName("Rada Team");
-        contact.setEmail("contact@rada.pl");
+		Contact contact = new Contact();
+		contact.setName("Rada Team");
+		contact.setEmail("contact@rada.pl");
 
-        License mitLicense = new License()
-                .name("EULA ")
-                .url("");
-        Info info = new Info()
-                .title("Rada API")
-                .version("1.0")
-                .contact(contact)
-                .description("This API exposes endpoints for Rada application")
-                .license(mitLicense);
+		License mitLicense = new License()
+				.name("EULA ")
+				.url("");
+		Info info = new Info()
+				.title("Rada API")
+				.version("1.0")
+				.contact(contact)
+				.description("This API exposes endpoints for Rada application")
+				.license(mitLicense);
 
-        String baseIssuer = issuerUri.endsWith("/") ? issuerUri.substring(0, issuerUri.length() - 1) : issuerUri;
-        String authorizationUrl = baseIssuer + "/protocol/openid-connect/auth";
-        String tokenUrl = baseIssuer + "/protocol/openid-connect/token";
+		String baseIssuer = issuerUri.endsWith("/") ? issuerUri.substring(0, issuerUri.length() - 1)
+				: issuerUri;
+		String authorizationUrl = baseIssuer + "/protocol/openid-connect/auth";
+		String tokenUrl = baseIssuer + "/protocol/openid-connect/token";
 
-        SecurityScheme oauthScheme = new SecurityScheme()
-                .type(SecurityScheme.Type.OAUTH2)
-                .flows(new OAuthFlows().authorizationCode(
-                        new OAuthFlow()
-                                .authorizationUrl(authorizationUrl)
-                                .tokenUrl(tokenUrl)
-                                .scopes(new Scopes()
-                                        .addString("openid", "OpenID Connect scope")
-                                        .addString("profile", "User profile")
-                                        .addString("email", "User email"))));
+		SecurityScheme oauthScheme = new SecurityScheme()
+				.type(SecurityScheme.Type.OAUTH2)
+				.flows(new OAuthFlows().authorizationCode(
+						new OAuthFlow()
+								.authorizationUrl(authorizationUrl)
+								.tokenUrl(tokenUrl)
+								.scopes(new Scopes()
+										.addString("openid",
+												"OpenID Connect scope")
+										.addString("profile", "User profile")
+										.addString("email", "User email"))));
 
-        return new OpenAPI()
-                .components(new Components()
-                        .addSecuritySchemes("keycloak", oauthScheme))
-                .addSecurityItem(new SecurityRequirement().addList("keycloak"))
-                .info(info)
-                .servers(List.of(localServer));
-    }
+		return new OpenAPI()
+				.components(new Components()
+						.addSecuritySchemes("keycloak", oauthScheme))
+				.addSecurityItem(new SecurityRequirement().addList("keycloak"))
+				.info(info)
+				.servers(List.of(localServer));
+	}
 }

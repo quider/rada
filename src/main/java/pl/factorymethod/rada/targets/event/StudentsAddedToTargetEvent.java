@@ -5,9 +5,8 @@ import java.util.List;
 import java.util.UUID;
 
 public record StudentsAddedToTargetEvent(
-    UUID targetPublicId,
-    List<UUID> studentPublicIds,
-    int studentCount,
-    LocalDateTime addedAt
-) {
+		UUID targetPublicId,
+		List<UUID> studentPublicIds,
+		int studentCount,
+		LocalDateTime addedAt) {
 }
