@@ -9,5 +9,4 @@ public record TargetContributionCollectionOpenedEvent(
     LocalDateTime openedAt,
     BigDecimal feePerStudent,
     int studentCount
-) {
 }
